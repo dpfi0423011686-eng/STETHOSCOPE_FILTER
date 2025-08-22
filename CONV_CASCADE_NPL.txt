@@ -1,0 +1,63 @@
+package n_bit_int is
+	subtype bits16 is integer range -2**15 to 2**15-1;
+end package;
+
+library work;
+use work.n_bit_int.all;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_signed.all;
+
+entity conv_cascade_npl is
+	port(x_in : in bits16;
+        y_out : out bits16;
+	     clk : in std_logic);  
+end conv_cascade_npl;
+
+architecture fpga of conv_cascade_npl is	
+
+	signal x,x1,x2,x3,x4,y,y1,y2,y3,y4,y_out1,y_out2 : bits16 := 0;
+	
+begin	
+	stage1: process
+	begin	
+		wait until clk='1';		
+		
+		x	<=	x_in;
+		y	<=	x_in - x + y - y/16;
+
+	end process stage1;
+	y_out1 <= y;
+	
+
+	-- x_in <= y_out1;	
+	
+	stage2: process
+	begin
+		wait  until clk='1';
+		x1	<=	y_out1;
+		x2	<=	x1;
+		y1	<=	y_out1 + x2 - 49*y2/64;
+		y2	<=	7*y2/4 + y1;
+
+		
+	
+	end process stage2;
+	y_out2 <= y2;	
+
+	-- x_in <= y_out2;	
+
+stage3: process
+	begin
+		wait  until clk='1';
+		x3	<=	y_out2;				
+		x4	<=	x3;			
+		y3	<=	y_out2 - x4 - 49*y4/64;
+		y4	<=	7*y4/4 + y3;
+	
+   end process stage3;
+	y_out <= y4;	
+	
+end fpga;

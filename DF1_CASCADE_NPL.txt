@@ -1,0 +1,69 @@
+package n_bit_int is
+	subtype bits16 is integer range -2**15 to 2**15-1;
+end package;
+
+library work;
+use work.n_bit_int.all;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_signed.all;
+
+entity DF1_CASCADE_NPL is
+	port(x_in : in bits16;
+        y_out : out bits16;
+	     clk : in std_logic);  
+end DF1_CASCADE_NPL;
+
+architecture fpga of DF1_CASCADE_NPL is	
+
+	signal x1_nm1,sx1,yn1,x2_nm1,x2_nm2,sx2,y2_nm1,yn2,x3_nm1,x3_nm2,sx3,y3_nm1,yn3, 
+	       y_out1,y_out2: bits16 := 0;
+	
+begin	
+	stage1: process
+	begin	
+		wait until clk='1';		
+		
+		x1_nm1	<=	x_in;
+		sx1		<=	x_in - x1_nm1;
+		yn1		<=	sx1 + 15*yn1/16;
+
+
+	end process stage1;
+	y_out1 <= yn1;
+	
+
+	-- x_in <= y_out1;	
+	
+	stage2: process
+	begin
+		wait  until clk='1';
+		
+		x2_nm1	<=	y_out1;
+		x2_nm2	<=	x2_nm1;
+		sx2		<=	y_out1 + x2_nm2;
+		y2_nm1	<=	sx2 - 49*yn2/64;
+		yn2		<=	y2_nm1 + 7*yn2/4;
+
+
+	end process stage2;
+	y_out2 <= yn2;	
+
+	-- x_in <= y_out2;	
+
+stage3: process
+	begin
+		wait  until clk='1';
+		x3_nm1	<=	y_out2;
+		x3_nm2	<=	x3_nm1;
+		sx3		<=	y_out2 - x3_nm2;
+		y3_nm1	<=	sx3 - 49*yn3/64;
+		yn3		<=	y3_nm1 + 7*yn3/4;
+
+	
+   end process stage3;
+	y_out <= yn3;	
+	
+end fpga;
